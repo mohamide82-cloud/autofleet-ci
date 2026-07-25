@@ -173,6 +173,15 @@ td{padding:11px 13px;font-size:13px;color:#4A5568;vertical-align:middle}
 .bnav-ico{font-size:19px;line-height:1}
 .bnav-add{width:40px;height:40px;background:#F97316;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;margin-top:-14px;box-shadow:0 4px 14px rgba(249,115,22,0.5)}
 
+/* ── MENU MOBILE "PLUS" ── */
+#mob-menu-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:600}
+#mob-menu-overlay.show{display:block}
+#mob-menu-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;padding:10px 14px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,0.18)}
+#mob-menu-sheet .mm-handle{width:38px;height:4px;background:#E2E8F0;border-radius:2px;margin:6px auto 12px}
+.mm-btn{width:100%;display:flex;align-items:center;gap:12px;padding:13px 10px;border:none;background:transparent;font-size:14px;font-weight:600;color:#1E293B;border-radius:10px;text-align:left}
+.mm-btn:active{background:#F4F6FB}
+.mm-ico{width:34px;height:34px;border-radius:9px;background:#FFF4ED;color:#F97316;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
 .hidden{display:none!important}
 
 /* ══════════ RESPONSIVE MOBILE ══════════ */
@@ -762,9 +771,20 @@ td{padding:11px 13px;font-size:13px;color:#4A5568;vertical-align:middle}
   <button class="bnav-btn active" id="bn-dashboard" onclick="goPage('dashboard')"><span class="bnav-ico">⊞</span>Accueil</button>
   <button class="bnav-btn" id="bn-vehicules" onclick="goPage('vehicules')"><span class="bnav-ico">🚗</span>Véhicules</button>
   <button class="bnav-btn" id="bn-locations" onclick="goPage('locations')"><span class="bnav-ico">📋</span>Locations</button>
-  <button class="bnav-btn" id="bn-retours" onclick="goPage('retours')"><span class="bnav-ico">↩</span>Retours</button>
   <button class="bnav-btn" id="bn-add" onclick="openForm(null)"><div class="bnav-add">+</div>Ajouter</button>
+  <button class="bnav-btn" id="bn-retours" onclick="goPage('retours')"><span class="bnav-ico">↩</span>Retours</button>
+  <button class="bnav-btn" id="bn-plus" onclick="toggleMobMenu()"><span class="bnav-ico">☰</span>Plus</button>
 </nav>
+
+<!-- MENU MOBILE "PLUS" -->
+<div id="mob-menu-overlay" onclick="if(event.target===this)toggleMobMenu()">
+  <div id="mob-menu-sheet">
+    <div class="mm-handle"></div>
+    <button class="mm-btn" id="mm-clients" onclick="goPage('clients');toggleMobMenu()"><span class="mm-ico">👤</span>Clients</button>
+    <button class="mm-btn" id="mm-rapports" onclick="goPage('rapports');toggleMobMenu()"><span class="mm-ico">📊</span>Rapports</button>
+    <button class="mm-btn" id="mm-parametres" onclick="goPage('parametres');toggleMobMenu()"><span class="mm-ico">⚙️</span>Paramètres</button>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div id="overlay" onclick="closeModal()">
@@ -964,6 +984,22 @@ function applyPerms(){
 
 
 /* ════════════════ NAVIGATION ════════════════ */
+/* ════════════════ MENU MOBILE "PLUS" ════════════════ */
+function toggleMobMenu(){
+  var ov=document.getElementById("mob-menu-overlay");
+  if(!ov) return;
+  var willShow = !ov.classList.contains("show");
+  if(willShow){
+    var role = currentUser ? (currentUser.role||"") : "";
+    ["mm-clients","mm-rapports","mm-parametres"].forEach(function(id){
+      var b=document.getElementById(id); if(!b) return;
+      if(role!=="admin"){ b.style.opacity="0.35"; b.style.pointerEvents="none"; }
+      else { b.style.opacity=""; b.style.pointerEvents=""; }
+    });
+  }
+  ov.classList.toggle("show", willShow);
+}
+
 function goPage(page){
   curPage=page;
 
@@ -978,6 +1014,8 @@ function goPage(page){
     var b=document.getElementById("bn-"+p);
     if(b) b.classList.toggle("active", p===page);
   });
+  var bnPlus=document.getElementById("bn-plus");
+  if(bnPlus) bnPlus.classList.toggle("active", ["clients","rapports","parametres"].indexOf(page)>=0);
 
   // Header
   var titres={dashboard:"Tableau de bord",vehicules:"Véhicules",locations:"Locations en cours",retours:"Retours",clients:"Clients",rapports:"Rapports",parametres:"Paramètres"};
@@ -1004,22 +1042,31 @@ function goPage(page){
     document.getElementById("searchInput").value="";
     renderTable();
     document.getElementById("pg-table").classList.remove("hidden");
-  } else {
-    var icos={clients:"👥",rapports:"📊",parametres:"⚙️"};
-    var ttls={clients:"Clients",rapports:"Rapports",parametres:"Paramètres"};
+  } else if(page==="clients"||page==="rapports"||page==="parametres"){
     // Vérifier accès admin uniquement
     var adminOnly = ["clients","rapports","parametres"];
     if(adminOnly.indexOf(page)>=0 && currentUser && currentUser.role!=="admin"){
-      document.getElementById("ph-ico").textContent = "🔒";
-      document.getElementById("ph-ttl").textContent = "Accès restreint";
-      document.getElementById("pg-placeholder").querySelector("[style]");
+      var icos={clients:"👥",rapports:"📊",parametres:"⚙️"};
       var phEl = document.getElementById("pg-placeholder");
+      document.getElementById("ph-ico").textContent = "🔒";
       phEl.querySelector(".ph-ttl").textContent = "Accès réservé à l'Administrateur";
       phEl.querySelector("[style]") && (phEl.querySelector("[style]").textContent = "Contactez votre administrateur pour accéder à cette section.");
-      document.getElementById("ph-ico").textContent = "🔒";
-      document.getElementById("pg-placeholder").classList.remove("hidden");
+      phEl.classList.remove("hidden");
       return;
     }
+    if(page==="clients"){
+      renderClients();
+      document.getElementById("pg-clients").classList.remove("hidden");
+    } else if(page==="rapports"){
+      renderRapports();
+      document.getElementById("pg-rapports").classList.remove("hidden");
+    } else {
+      renderParametres();
+      document.getElementById("pg-parametres").classList.remove("hidden");
+    }
+  } else {
+    var icos={clients:"👥",rapports:"📊",parametres:"⚙️"};
+    var ttls={clients:"Clients",rapports:"Rapports",parametres:"Paramètres"};
     document.getElementById("ph-ico").textContent = icos[page]||"📄";
     document.getElementById("ph-ttl").textContent = ttls[page]||page;
     document.getElementById("pg-placeholder").classList.remove("hidden");
