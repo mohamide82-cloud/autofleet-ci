@@ -1226,6 +1226,8 @@ function openDetail(id){
   else { nw.style.display="none"; }
   document.getElementById("d-btnDel").onclick=function(){ askDelete(id); };
   document.getElementById("d-btnEdit").onclick=function(){ openEdit(id); };
+  var btnRet=document.getElementById("d-btnRetour");
+  if(btnRet){ btnRet.style.display=(v.statut==="loue"&&currentUser&&perm("modifier"))?"":"none"; btnRet.onclick=function(){openRetourModal(v.id);}; }
   // Afficher/masquer boutons selon rôle
   document.getElementById("d-btnDel").style.display  = (currentUser&&perm("supprimer")) ? "" : "none";
   document.getElementById("d-btnEdit").style.display = (currentUser&&perm("modifier"))  ? "" : "none";
